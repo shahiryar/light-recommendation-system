@@ -38,7 +38,7 @@ setup(
     license="MIT license",
     long_description=readme + '\n\n' + history,
     include_package_data=True,
-    keywords='lightrecsys',
+    keywords=['lightrecsys', 'recommendation system', 'collaborative filtering', 'machine learning', 'data science', 'lightweight'],
     name='lightrecsys',
     packages=find_packages(include=['lightrecsys', 'lightrecsys.*']),
     test_suite='tests',
