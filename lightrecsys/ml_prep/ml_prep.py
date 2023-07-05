@@ -1,5 +1,11 @@
 import pandas as pd
 from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import (
+    OneHotEncoder,
+    LabelEncoder,
+    StandardScaler,
+    MinMaxScaler,
+)
 
 
 class MissingValueImputer:
@@ -68,4 +74,132 @@ class MissingValueImputer:
         return pd.DataFrame(self.imputer.transform(X), columns=X.columns)
 
 
-# Similar docstrings can be added to the CategoricalEncoder and Scaler classes.
+class CategoricalEncoder:
+    """
+    A class used to encode categorical variables in a dataset.
+
+    ...
+
+    Attributes
+    ----------
+    method : str
+        the method to encode categorical variables ('label_encoding', 'one_hot_encoding')
+    encoder : OneHotEncoder or LabelEncoder
+        an encoder object from sklearn.preprocessing
+
+    Methods
+    -------
+    fit(X)
+        Fits the encoder on X.
+    transform(X)
+        Transforms X.
+    """
+
+    def __init__(self, method="one_hot"):
+        """
+        Constructs all the necessary attributes for the CategoricalEncoder object.
+
+        Parameters
+        ----------
+            method : str, optional
+                the method to encode categorical variables ('label_encoding', 'one_hot_encoding') (default is 'one_hot')
+        """
+        self.method = method
+        if method == "one_hot":
+            self.encoder = OneHotEncoder(handle_unknown="ignore")
+        else:
+            self.encoder = LabelEncoder()
+
+    def fit(self, X):
+        """
+        Fits the encoder on X.
+
+        Parameters
+        ----------
+            X : pandas DataFrame
+                the dataset to fit the encoder on
+        """
+        self.encoder.fit(X)
+
+    def transform(self, X):
+        """
+        Transforms X.
+
+        Parameters
+        ----------
+            X : pandas DataFrame
+                the dataset to transform
+
+        Returns
+        -------
+        pandas DataFrame
+            the transformed dataset
+        """
+        if self.method == "one_hot":
+            return pd.DataFrame(
+                self.encoder.transform(X).toarray(),
+                columns=self.encoder.get_feature_names(X.columns),
+            )
+        else:
+            return pd.DataFrame(self.encoder.transform(X), columns=X.columns)
+
+
+class Scaler:
+    """
+    A class used to scale numerical variables in a dataset.
+
+    ...
+
+    Attributes
+    ----------
+    scaler : StandardScaler or MinMaxScaler
+        a scaler object from sklearn.preprocessing
+
+    Methods
+    -------
+    fit(X)
+        Fits the scaler on X.
+    transform(X)
+        Transforms X.
+    """
+
+    def __init__(self, method="standard"):
+        """
+        Constructs all the necessary attributes for the Scaler object.
+
+        Parameters
+        ----------
+            method : str, optional
+                the method to scale numerical variables ('standard', 'minmax') (default is 'standard')
+        """
+        if method == "standard":
+            self.scaler = StandardScaler()
+        else:
+            self.scaler = MinMaxScaler()
+
+    def fit(self, X):
+        """
+        Fits the scaler on X.
+
+        Parameters
+        ----------
+            X : pandas DataFrame
+                the dataset to fit the scaler on
+        """
+        self.scaler.fit(X)
+
+    def transform(self, X):
+        """
+        Transforms X.
+
+        Parameters
+        ----------
+            X : pandas DataFrame
+                the dataset to transform
+
+        Returns
+        -------
+        pandas DataFrame
+            the transformed dataset
+        """
+        return pd.DataFrame(self.scaler.transform(X), columns=X.columns)
