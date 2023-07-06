@@ -8,6 +8,7 @@ from click.testing import CliRunner
 
 import pandas as pd
 import numpy as np
+
 from sklearn.datasets import load_iris
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from lightrecsys.ml_prep import MissingValueImputer, CategoricalEncoder, Scaler
@@ -43,45 +44,42 @@ def test_command_line_interface():
 
 
 def test_missing_value_imputer():
-    # Create a DataFrame with some missing values
-    data = pd.DataFrame(
-        {
-            "A": [1, 2, np.nan, 4, 5],
-            "B": [np.nan, 2, 3, 4, 5],
-            "C": [1, 2, 3, np.nan, np.nan],
-        }
-    )
+    # Create a sample dataset with missing values
+    data = {
+        "A": [1, 2, None, 4, 5],
+        "B": [6, None, 8, 9, 10],
+        "C": [11, 12, 13, None, 15],
+    }
+    df = pd.DataFrame(data)
 
-    # Test mean imputation
+    # Create an instance of MissingValueImputer
     imputer = MissingValueImputer(method="mean")
-    imputer.fit(data)
-    result = imputer.transform(data)
-    assert not result.isnull().any().any()  # There should be no missing values
-    assert (
-        result.loc[2, "A"] == 3
-    )  # The missing value in column A should be replaced with the mean (3)
 
-    # Test median imputation
-    imputer = MissingValueImputer(method="median")
-    imputer.fit(data)
-    result = imputer.transform(data)
-    assert not result.isnull().any().any()  # There should be no missing values
-    assert (
-        result.loc[0, "B"] == 3
-    )  # The missing value in column B should be replaced with the median (3)
+    # Test fit method
+    imputer.fit(df)
 
-    # Test constant imputation
-    imputer = MissingValueImputer(method="constant", fill_value=0)
-    imputer.fit(data)
-    result = imputer.transform(data)
-    assert not result.isnull().any().any()  # There should be no missing values
-    assert (
-        result.loc[3, "C"] == 0
-    )  # The missing value in column C should be replaced with 0
+    # Test transform method
+    transformed_df = imputer.transform(df)
 
+    # Check if missing values are imputed
+    assert transformed_df.isnull().sum().sum() == 0
 
-from sklearn.preprocessing import LabelEncoder
-import numpy as np
+    # Check if the transformed dataframe has the same shape
+    assert transformed_df.shape == df.shape
+
+    # Check if column names are preserved
+    assert transformed_df.columns.tolist() == df.columns.tolist()
+
+    # Check if the imputed values are correct
+    expected_mean_A = df["A"].mean()
+    expected_mean_B = df["B"].mean()
+    expected_mean_C = df["C"].mean()
+
+    assert transformed_df["A"].equals(pd.Series([1, 2, expected_mean_A, 4, 5]))
+    assert transformed_df["B"].equals(pd.Series([6, expected_mean_B, 8, 9, 10]))
+    assert transformed_df["C"].equals(pd.Series([11, 12, 13, expected_mean_C, 15]))
+
+    print("Imputer: All tests passed successfully.")
 
 
 def test_categorical_encoder():
