@@ -95,18 +95,19 @@ class CategoricalEncoder:
         Transforms X.
     """
 
-    def __init__(self, method="one_hot"):
+    def __init__(self, method="one_hot", prefix=None):
         """
         Constructs all the necessary attributes for the CategoricalEncoder object.
 
         Parameters
         ----------
             method : str, optional
-                the method to encode categorical variables ('label_encoding', 'one_hot_encoding') (default is 'one_hot')
+                the method to encode categorical variables ('label', 'one_hot') (default is 'one_hot')
         """
         self.method = method
+        self.prefix = prefix
         if method == "one_hot":
-            self.encoder = OneHotEncoder(handle_unknown="ignore")
+            self.encoder = None
         else:
             self.encoder = LabelEncoder()
 
@@ -119,6 +120,8 @@ class CategoricalEncoder:
             X : pandas DataFrame
                 the dataset to fit the encoder on
         """
+        if self.encoder is None:
+            return
         self.encoder.fit(X)
 
     def transform(self, X):
@@ -136,10 +139,9 @@ class CategoricalEncoder:
             the transformed dataset
         """
         if self.method == "one_hot":
-            return pd.DataFrame(
-                self.encoder.transform(X).toarray(),
-                columns=self.encoder.get_feature_names(X.columns),
-            )
+            if self.prefix is None:
+                return pd.get_dummies(X, dtype=int)
+            return pd.get_dummies(X, prefix=self.prefix, dtype=int)
         else:
             return pd.DataFrame(self.encoder.transform(X), columns=X.columns)
 
