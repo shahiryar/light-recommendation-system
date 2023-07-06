@@ -8,6 +8,8 @@ from click.testing import CliRunner
 
 import pandas as pd
 import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from lightrecsys.ml_prep import MissingValueImputer, CategoricalEncoder, Scaler
 
 from lightrecsys import cli
@@ -78,60 +80,73 @@ def test_missing_value_imputer():
     )  # The missing value in column C should be replaced with 0
 
 
+from sklearn.preprocessing import LabelEncoder
+import numpy as np
+
+
 def test_categorical_encoder():
-    # Create a simple dataframe for testing
-    df = pd.DataFrame(
+    # Create a sample dataset
+    data = pd.DataFrame({"Category": ["A", "B", "A", "C", "B"]})
+
+    # Test one-hot encoding without prefix
+    encoder = CategoricalEncoder(method="one_hot")
+    transformed = encoder.transform(data)
+    expected = pd.DataFrame(
         {
-            "fruit": ["apple", "banana", "cherry", "apple", "banana", "cherry"],
-            "color": ["red", "yellow", "red", "green", "yellow", "red"],
+            "Category_A": [1, 0, 1, 0, 0],
+            "Category_B": [0, 1, 0, 0, 1],
+            "Category_C": [0, 0, 0, 1, 0],
         }
     )
+    assert transformed.equals(expected), "One-hot encoding without prefix test failed"
 
-    # Test one-hot encoding
-    one_hot_encoder = CategoricalEncoder(method="one_hot")
-    one_hot_encoder.fit(df)
-    transformed_df = one_hot_encoder.transform(df)
-
-    assert transformed_df.shape == (
-        6,
-        5,
-    )  # Check the shape of the transformed dataframe
-    assert set(transformed_df.columns) == set(
-        ["fruit_apple", "fruit_banana", "fruit_cherry", "color_red", "color_yellow"]
-    )  # Check the column names
+    # Test one-hot encoding with prefix
+    encoder = CategoricalEncoder(method="one_hot", prefix="Cat")
+    transformed = encoder.transform(data)
+    expected = pd.DataFrame(
+        {"Cat_A": [1, 0, 1, 0, 0], "Cat_B": [0, 1, 0, 0, 1], "Cat_C": [0, 0, 0, 1, 0]}
+    )
+    assert transformed.equals(expected), "One-hot encoding with prefix test failed"
 
     # Test label encoding
-    label_encoder = CategoricalEncoder(method="label_encoding")
-    label_encoder.fit(df)
-    transformed_df = label_encoder.transform(df)
+    encoder = CategoricalEncoder(method="label")
+    encoder.fit(data)
+    transformed = encoder.transform(data)
+    expected = pd.DataFrame({"Category": [0, 1, 0, 2, 1]})
+    assert transformed.equals(expected), "Label encoding test failed"
 
-    assert transformed_df.shape == (
-        6,
-        2,
-    )  # Check the shape of the transformed dataframe
-    assert set(transformed_df.columns) == set(
-        ["fruit", "color"]
-    )  # Check the column names
-    assert (
-        transformed_df["fruit"].nunique() == 3
-    )  # Check the number of unique values in the 'fruit' column
-    assert (
-        transformed_df["color"].nunique() == 2
-    )  # Check the number of unique values in the 'color' column
+    print("Categorical Encoding: All tests passed successfully!")
 
 
-def test_Scaler():
-    # Create a simple dataframe
-    df = pd.DataFrame({"A": [1, 2, 3, 4, 5], "B": [100, 200, 300, 400, 500]})
+def test_scaler():
+    # Load the Iris dataset for testing
+    iris = load_iris()
+    X = pd.DataFrame(iris.data, columns=iris.feature_names)
 
     # Test StandardScaler
-    scaler_standard = Scaler(method="standard")
-    df_scaled_standard = scaler_standard.fit(df).transform(df)
-    assert np.isclose(df_scaled_standard.mean(), 0).all()
-    assert np.isclose(df_scaled_standard.std(), 1).all()
+    scaler = Scaler(method="standard")
+    scaler.fit(X)
+    transformed_X = scaler.transform(X)
+
+    # Verify the transformed dataset
+    sklearn_scaler = StandardScaler()
+    sklearn_scaler.fit(X)
+    expected_transformed_X = pd.DataFrame(
+        sklearn_scaler.transform(X), columns=X.columns
+    )
+    assert transformed_X.equals(expected_transformed_X), "StandardScaler test failed!"
 
     # Test MinMaxScaler
-    scaler_minmax = Scaler(method="minmax")
-    df_scaled_minmax = scaler_minmax.fit(df).transform(df)
-    assert np.isclose(df_scaled_minmax.min(), 0).all()
-    assert np.isclose(df_scaled_minmax.max(), 1).all()
+    scaler = Scaler(method="minmax")
+    scaler.fit(X)
+    transformed_X = scaler.transform(X)
+
+    # Verify the transformed dataset
+    sklearn_scaler = MinMaxScaler()
+    sklearn_scaler.fit(X)
+    expected_transformed_X = pd.DataFrame(
+        sklearn_scaler.transform(X), columns=X.columns
+    )
+    assert transformed_X.equals(expected_transformed_X), "MinMaxScaler test failed!"
+
+    print("Scaler: All tests passed successfully!")
